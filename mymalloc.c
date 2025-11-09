@@ -73,7 +73,8 @@ void myfree(void *ptr) {
   // look at the region left of this allocation
   // 1. if there is no allocation before this one, we dont have to merge it
   if (p - 5 < heap) {
-    return;
+    p += curr_stride + 9;
+    goto right_merge;
   }
 
   // 2. check the previous allocation to see if its free

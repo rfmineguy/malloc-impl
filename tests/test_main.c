@@ -7,6 +7,7 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_single(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture);
 
 MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -14,6 +15,7 @@ MunitTest tests[] = {
   { "/malloc_multiple", test_malloc_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_single", test_malloc_free_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_multiple", test_malloc_free_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_free_multiple_interleaved", test_malloc_free_multiple_interleaved, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -166,7 +168,7 @@ MunitResult test_malloc_free_single(const MunitParameter params[], void* user_da
   return MUNIT_OK;
 }
 
-/* 
+/*
  * What are we testing?
  *   - we want to now test multiple mallocs and frees in conjunction with each other
  *
@@ -187,6 +189,45 @@ MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_
   myfree(p2);
 
   uint8_t* heap = heap_test_get();
+
+  // 1. check the header is appropriate for the HEAP_SIZE
+  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+
+  // 2. check the flags are not set
+  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
+
+  // 3. check the trailer is equal to the header
+  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  return MUNIT_OK;
+}
+
+/* * What are we testing?
+ *   - we want to now test multiple mallocs and frees in conjunction with each other
+ *   - this time however we free the first allocation before allocating the second
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - given that we have an equal number of frees and mallocs we should expect the resultant heap
+ *      to be indistinguishable from a freshly created heap
+ */
+MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  uint8_t* heap = heap_test_get();
+
+  void* p = mymalloc(100);
+  myfree(p);
+
+  void* p2 = mymalloc(50);
+
+  // check the header to see if it is 50 bytes long before freeing the allocation
+  //   this means that the first 100 byte freed allocation is now being occupied by
+  //   the new 50 byte one
+  munit_assert_int(*(uint32_t*)heap, ==, 50);
+
+  myfree(p2);
 
   // 1. check the header is appropriate for the HEAP_SIZE
   munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);

@@ -3,6 +3,15 @@
 #include <time.h>
 #include <string.h>
 #include <stdio.h>
+#define TEST_RNG_SEEDS_COUNT 5
+
+int test_rng_seeds[TEST_RNG_SEEDS_COUNT] = {
+  0x8247134,
+  0x13497ab,
+  0xbfd31f4,
+  0xca518f9,
+  0x4b82f5b
+};
 
 typedef struct {
   int size;
@@ -37,11 +46,13 @@ void test_malloc_free() {
 }
 
 int main() {
-  srand(0x453975);
-
-  for (int i = 0; i < 0xffff; i++) {
-    test_malloc_free();
+  char output_file[100] = {0};
+  for (int i = 0; i < TEST_RNG_SEEDS_COUNT; i++) {
+    srand(test_rng_seeds[i]);
+    snprintf(output_file, 100, "heap_%d.dump", i);
+    for (int j = 0; j < 0xffff; j++) {
+      test_malloc_free();
+    }
+    heap_dump(output_file);
   }
-
-  heap_dump("heap.dump");
 }

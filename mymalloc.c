@@ -135,3 +135,9 @@ void heap_dump(const char* fn) {
 
   fclose(f);
 }
+
+#ifdef TEST
+uint8_t* heap_test_get() {
+  return heap;
+}
+#endif

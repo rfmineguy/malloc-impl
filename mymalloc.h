@@ -12,4 +12,8 @@ void  myfree(void*);
 void  heap_init();
 void  heap_dump(const char*);
 
+#ifdef TEST
+uint8_t* heap_test_get();
+#endif
+
 #endif

@@ -61,6 +61,7 @@ void* mycalloc(uint32_t count, uint32_t size) {
 }
 
 void myfree(void *ptr) {
+  if (ptr == 0) return;
   uint8_t* p = (uint8_t*)ptr;
   *p = 0xff;
   if (p < heap || p > heap + HEAP_SIZE)

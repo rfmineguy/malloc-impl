@@ -6,12 +6,14 @@ MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fix
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_single(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture);
 
 MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_single", test_malloc_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_multiple", test_malloc_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_single", test_malloc_free_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/malloc_free_multiple", test_malloc_free_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -111,5 +113,26 @@ MunitResult test_malloc_free_single(const MunitParameter params[], void* user_da
   // 3. check the trailer is equal to the header
   munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
 
+  return MUNIT_OK;
+}
+
+MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  void* p = mymalloc(100);
+  void* p2 = mymalloc(50);
+
+  myfree(p);
+  myfree(p2);
+
+  uint8_t* heap = heap_test_get();
+
+  // 1. check the header is appropriate for the HEAP_SIZE
+  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+
+  // 2. check the flags are not set
+  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
+
+  // 3. check the trailer is equal to the header
+  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
   return MUNIT_OK;
 }

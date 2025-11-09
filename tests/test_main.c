@@ -348,6 +348,7 @@ MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], vo
 /* * What are we testing?
  *   - test what happens when you try to allocate a region that is too big to fit in the
  *       heap
+ *   - additionally test to make sure that if you try to free a NULL pointer, nothing happens
  *
  * Covers:
  *   - mymalloc()

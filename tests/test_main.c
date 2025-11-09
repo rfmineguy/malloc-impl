@@ -245,6 +245,18 @@ MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[],
   return MUNIT_OK;
 }
 
+/* * What are we testing?
+ *   - we want to now test many random mallocs and frees in conjunction with each other
+ *   - the frees will be freed in the same order they were allocated
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - given that we have an equal number of frees and mallocs we should expect the resultant heap
+ *      to be indistinguishable from a freshly created heap
+ */
 MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   uint8_t* heap = heap_test_get();
@@ -271,6 +283,18 @@ MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* 
   return MUNIT_OK;
 }
 
+/* * What are we testing?
+ *   - we want to now test many random mallocs and frees in conjunction with each other
+ *   - the frees will be freed in a random order to how were allocated
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - given that we have an equal number of frees and mallocs we should expect the resultant heap
+ *      to be indistinguishable from a freshly created heap
+ */
 MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   uint8_t* heap = heap_test_get();

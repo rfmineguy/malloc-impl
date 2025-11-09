@@ -1,4 +1,5 @@
 #include "munit.h"
+#include "test_util.h"
 #define TEST
 #include "../mymalloc.h"
 
@@ -8,6 +9,7 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
 MunitResult test_malloc_free_single(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture);
 
 MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -16,6 +18,7 @@ MunitTest tests[] = {
   { "/malloc_free_single", test_malloc_free_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_multiple", test_malloc_free_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_multiple_interleaved", test_malloc_free_multiple_interleaved, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_free_many_in_order", test_malloc_free_many_in_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -228,6 +231,32 @@ MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[],
   munit_assert_int(*(uint32_t*)heap, ==, 50);
 
   myfree(p2);
+
+  // 1. check the header is appropriate for the HEAP_SIZE
+  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+
+  // 2. check the flags are not set
+  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
+
+  // 3. check the trailer is equal to the header
+  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  return MUNIT_OK;
+}
+
+MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  uint8_t* heap = heap_test_get();
+
+  test_util_allocation allocations[50] = {0};
+
+  for (int i = 0; i < 50; i++) {
+    allocations[i].size = (munit_rand_int_range(10, 50));
+    allocations[i].ptr = mymalloc(allocations[i].size);
+  }
+
+  for (int i = 0; i < 50; i++) {
+    myfree(allocations[i].ptr);
+  }
 
   // 1. check the header is appropriate for the HEAP_SIZE
   munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);

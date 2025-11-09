@@ -30,11 +30,22 @@ The memory is layed out in a special encoding.. when you call malloc, it searche
 4. Shrink the size of the free region this memory came from
 ```
 
+## Malloc Time Complexity
+The time complexity of `mymalloc` is O(k) worst case where<br>
+- k is the number of allocations made previouly
+Due to using metadata to jump large segments of the heap, we can measure in terms of allocations rather than bytes hence the k.
+
 ## Calloc Implementation
 ```
 1. Use malloc to get the memory region
 2. Memset the region to 0
 ```
+
+## Calloc Time Complexity
+The time complexity of `mycalloc` is derived from the time complexity of `mymalloc`.<br>
+`mycalloc` zeroes out the allocation made and returns the pointer to it therefore we can say that it is O(k + m), where 
+- k is the number of allocations made previously
+- m is the size of the allocation just made (memset to zero)
 
 ## Free Implementation
 ```
@@ -44,3 +55,7 @@ The memory is layed out in a special encoding.. when you call malloc, it searche
 4. Check the next region to see if its free
 5. If it is, then merge the two regions
 ```
+
+## Free Time Complexity
+The time complexity of `free` is O(1)<br>
+Due to having metadata telling us the size of the allocated regions we can simply use pointer arithmetic to navigate the heap relative to the pointer being freed.<br>

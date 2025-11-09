@@ -42,5 +42,22 @@ MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fix
 }
 
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture) {
-  return MUNIT_SKIP;
+  heap_init();
+  void* p = mymalloc(100);
+
+  // check the header of this allocation
+  munit_assert_int(*(uint32_t*)(p - 5), ==, 100);
+  munit_assert_int(*(uint8_t*)(p - 1), ==, 0x1);
+
+  // check the trailer of this allocation
+  munit_assert_int(*(uint32_t*)(p + 100), ==, 100);
+
+  // check the header of the region after
+  munit_assert_int(*(uint32_t*)(p + 100 + 4), ==, HEAP_SIZE - 9 - 5 - 4 - 100);
+
+  // check the trailer of the region after
+  uint32_t header = *(uint32_t*)(p + 100 + 4);
+  munit_assert_int(header, ==, HEAP_SIZE - 9 - 5 - 4 - 100);
+
+  return MUNIT_OK;
 }

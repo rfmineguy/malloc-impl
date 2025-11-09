@@ -20,7 +20,7 @@ jobs:
       - name: Compile Tests
         run: |
           cd tests
-          gcc test_main.c munit.c test_util.c ../mymalloc.c -o test -DTEST
+          gcc -std=c11 test_main.c munit.c test_util.c ../mymalloc.c -o test -DTEST
         shell: bash
 
       - name: Run Tests

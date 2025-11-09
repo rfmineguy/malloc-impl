@@ -59,6 +59,60 @@ void* mycalloc(uint32_t count, uint32_t size) {
   memset(addr, 0, size);
   return addr;
 }
+
+void myfree(void *ptr) {
+  uint8_t* p = (uint8_t*)ptr;
+  *p = 0xff;
+  if (p < heap || p > heap + HEAP_SIZE)
+    return;
+
+  uint32_t curr_stride = *(uint32_t*)(p - 5);
+  uint8_t* curr_flags = p - 1;
+  *curr_flags = 0;
+
+  // look at the region left of this allocation
+  // 1. if there is no allocation before this one, we dont have to merge it
+  if (p - 5 < heap) {
+    return;
+  }
+
+  // 2. check the previous allocation to see if its free
+  uint32_t prev_stride = *(uint32_t*)(p - 5 - 4);
+  uint8_t* prev_hdr   = p - 9 - (5 + prev_stride);
+  if (prev_hdr < heap) {
+    return;
+  }
+  uint8_t* prev_flags = prev_hdr + 4;
+
+  uint32_t new_stride = prev_stride + curr_stride + 9;
+  if ((*prev_flags & FLAG_USED) == 0) {
+    *(uint32_t*)prev_hdr = new_stride;                      // set header
+    *(uint32_t*)(prev_hdr + 5 + new_stride) = new_stride;   // set trailer
+    *prev_flags = 0;                                        // set flags
+    memset(prev_hdr + 5, 0x0, new_stride);
+  }
+
+  // move p to the start of the next block
+  p = prev_hdr + 9 + new_stride + 5;
+
+  // 3. check the previous allocation to see if its free
+  curr_stride = *(uint32_t*)(p - 5);
+  prev_stride = *(uint32_t*)(p - 5 - 4);
+  prev_hdr   = p - 9 - (5 + prev_stride);
+  if (prev_hdr < heap) {
+     return;
+  }
+  prev_flags = prev_hdr + 4;
+
+  new_stride = prev_stride + curr_stride + 9;
+  if ((*prev_flags & FLAG_USED) == 0) {
+    *(uint32_t*)prev_hdr = new_stride;                      // set header
+    *(uint32_t*)(prev_hdr + 5 + new_stride) = new_stride;   // set trailer
+    *prev_flags = 0;                                        // set flags
+    //memset(prev_hdr + 5, 0x0, new_stride);
+  }
+}
+
 void heap_init() {
   memset(heap, 0, HEAP_SIZE);
   *(uint32_t*)(heap) = HEAP_SIZE - 9;

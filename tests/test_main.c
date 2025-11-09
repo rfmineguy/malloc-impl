@@ -25,6 +25,18 @@ int main(int argc, char** argv) {
   return munit_suite_main(&suite, NULL, argc, argv);
 }
 
+/*
+ * What are we testing?
+ *   - we want to make sure that the heap starts in a valid state
+ * 
+ * Covers:
+ *   - heap_init()
+ *   - heap_test_get()
+ *
+ * Expected:
+ *   - heap_init should provide the minimal metadata required for creating a single
+ *        large free region of memory
+ */
 MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   uint8_t* heap = heap_test_get();
@@ -47,6 +59,19 @@ MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fix
   return MUNIT_OK;
 }
 
+/*
+ * What are we testing?
+ *   - we want to make sure the most basic task (allocation) can be done once without problems
+ *   - this is a standalone test that tests heap region splitting
+ *
+ * Covers:
+ *   - mymalloc()
+ *
+ * Expected:
+ *   - mymalloc should not break the heap metadata
+ *   - mymalloc should modify heap metadata in a way that keeps the heap traversable
+ *   - there should be two valid regions (p, rest)
+ */
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);
@@ -68,6 +93,18 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
   return MUNIT_OK;
 }
 
+/*
+ * What are we testing?
+ *   - we want to make sure that subsequent malloc calls get unique, nonoverlapping regions of memory
+ *
+ * Covers:
+ *   - mymalloc()
+ *
+ * Expected:
+ *   - mymalloc should not break the heap metadata
+ *   - mymalloc should modify heap metadata in a way that keeps the heap traversable
+ *   - there should be three valid regions (p, p2, rest)
+ */
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);
@@ -97,6 +134,19 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
   return MUNIT_OK;
 }
 
+/*
+ * What are we testing?
+ *   - we want to test malloc and free in conjunction with each other
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - the resultant heap should be indistinguishable from a freshly created heap
+ *   - this would demonstrate that region joining is functional for a single region
+ *      allocation
+ */
 MunitResult test_malloc_free_single(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);
@@ -116,6 +166,18 @@ MunitResult test_malloc_free_single(const MunitParameter params[], void* user_da
   return MUNIT_OK;
 }
 
+/* 
+ * What are we testing?
+ *   - we want to now test multiple mallocs and frees in conjunction with each other
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - given that we have an equal number of frees and mallocs we should expect the resultant heap
+ *      to be indistinguishable from a freshly created heap
+ */
 MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);

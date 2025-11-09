@@ -6,6 +6,7 @@
 MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_single(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture);
@@ -16,6 +17,7 @@ MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_single", test_malloc_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_multiple", test_malloc_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_too_big", test_malloc_too_big, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_single", test_malloc_free_single, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/malloc_free_multiple", test_malloc_free_multiple, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_multiple_interleaved", test_malloc_free_multiple_interleaved, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -137,6 +139,24 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
   // check the trailer of the region after
   uint32_t header = *(uint32_t*)(p2 + 20 + 4);
   munit_assert_int(header, ==, HEAP_SIZE - 9 - 9 - 5 - 4 - 100 - 20);
+
+  return MUNIT_OK;
+}
+
+MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  uint8_t* heap = heap_test_get();
+  void* p = mymalloc(HEAP_SIZE);
+  munit_assert_null(p);
+
+  // 2. check the header is appropriate for the HEAP_SIZE
+  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+
+  // 3. check the flags are not set
+  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
+
+  // 4. check the trailer is equal to the header
+  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
 
   return MUNIT_OK;
 }

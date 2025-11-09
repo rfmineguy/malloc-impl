@@ -1,5 +1,9 @@
 ![img](malloc_mem_layout_image_git_readme.png)
 
+[![MacOS (ARM) Build](https://github.com/rfmineguy/malloc-impl/actions/workflows/macos-arm.yml/badge.svg?branch=main&label=MacOS%20ARM%20Build)](https://github.com/rfmineguy/malloc-impl/actions/workflows/macos-arm.yml)
+[![Linux Build](https://github.com/rfmineguy/malloc-impl/actions/workflows/linux.yml/badge.svg?branch=main&label=Linux%20Build)](https://github.com/rfmineguy/malloc-impl/actions/workflows/linux.yml)
+[![Windows Build](https://github.com/rfmineguy/malloc-impl/actions/workflows/windows.yml/badge.svg?branch=main&label=Windows%20Build)](https://github.com/rfmineguy/malloc-impl/actions/workflows/windows.yml)
+
 # My Malloc
 This repository is meant to host and be a display of my journey through implementing malloc/calloc/free for my main operating system project.
 

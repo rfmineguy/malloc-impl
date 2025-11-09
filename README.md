@@ -1,3 +1,5 @@
+![img](malloc_mem_layout_image_git_readme.png)
+
 # My Malloc
 This repository is meant to host and be a display of my journey through implementing malloc/calloc/free for my main operating system project.
 

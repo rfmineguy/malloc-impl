@@ -12,6 +12,7 @@ MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_
 MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* user_data_or_fixture);
 
 MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -23,6 +24,7 @@ MunitTest tests[] = {
   { "/test_malloc_free_multiple_interleaved", test_malloc_free_multiple_interleaved, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_many_in_order", test_malloc_free_many_in_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_many_out_of_order", test_malloc_free_many_out_of_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_multiple_too_big", test_malloc_multiple_too_big, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -340,5 +342,34 @@ MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], vo
 
   // 3. check the trailer is equal to the header
   munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  return MUNIT_OK;
+}
+
+/* * What are we testing?
+ *   - test what happens when you try to allocate a region that is too big to fit in the
+ *       heap
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - the internal heap structure should not change in any way
+ *   - the pointer returned from a failed allocation should be NULL
+ */
+MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  void *a = mymalloc(0x400);
+  munit_assert_not_null(a);
+  void *b = mymalloc(0x400);
+  munit_assert_not_null(b);
+  void *c = mymalloc(0x400);
+  munit_assert_not_null(c);
+  void *d = mymalloc(0x400);
+  munit_assert_null(d);
+  myfree(d);
+  d = mymalloc(0x30);
+  munit_assert_not_null(d);
+  heap_dump("heap.dump");
   return MUNIT_OK;
 }

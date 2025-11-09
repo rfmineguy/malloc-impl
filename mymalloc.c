@@ -80,7 +80,8 @@ void myfree(void *ptr) {
   uint32_t prev_stride = *(uint32_t*)(p - 5 - 4);
   uint8_t* prev_hdr   = p - 9 - (5 + prev_stride);
   if (prev_hdr < heap) {
-    return;
+    p += curr_stride + 9;
+    goto right_merge;
   }
   uint8_t* prev_flags = prev_hdr + 4;
 
@@ -95,21 +96,27 @@ void myfree(void *ptr) {
   // move p to the start of the next block
   p = prev_hdr + 9 + new_stride + 5;
 
+right_merge:
+  *(uint32_t*)p = 0x44;
   // 3. check the previous allocation to see if its free
   curr_stride = *(uint32_t*)(p - 5);
   prev_stride = *(uint32_t*)(p - 5 - 4);
+  curr_flags  = p - 1;
   prev_hdr   = p - 9 - (5 + prev_stride);
   if (prev_hdr < heap) {
      return;
   }
   prev_flags = prev_hdr + 4;
+  if ((*curr_flags & FLAG_USED) == FLAG_USED) {
+    return;
+  }
 
   new_stride = prev_stride + curr_stride + 9;
   if ((*prev_flags & FLAG_USED) == 0) {
     *(uint32_t*)prev_hdr = new_stride;                      // set header
     *(uint32_t*)(prev_hdr + 5 + new_stride) = new_stride;   // set trailer
     *prev_flags = 0;                                        // set flags
-    //memset(prev_hdr + 5, 0x0, new_stride);
+    memset(prev_hdr + 5, 0x0, new_stride);
   }
 }
 
@@ -117,7 +124,7 @@ void heap_init() {
   memset(heap, 0, HEAP_SIZE);
   *(uint32_t*)(heap) = HEAP_SIZE - 9;
   *(uint32_t*)(heap + 4) = 0;
-  *(uint32_t*)(heap + HEAP_SIZE - 5) = HEAP_SIZE - 9;
+  *(uint32_t*)(heap + HEAP_SIZE - 4) = HEAP_SIZE - 9;
 }
 
 void heap_dump(const char* fn) {

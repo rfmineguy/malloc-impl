@@ -1,3 +1,9 @@
+#define assert(cond) {\
+  if (!(cond)) {\
+    fprintf(stderr, #cond "failed\n");\
+  }\
+}
+
 #include "../mymalloc.h"
 #include "test_util.h"
 #include <stdlib.h>
@@ -38,6 +44,6 @@ int main() {
     for (int j = 0; j < 0xffff; j++) {
       test_malloc_free();
     }
-    heap_dump(output_file);
+    assert(heap_dump(output_file) == 0);
   }
 }

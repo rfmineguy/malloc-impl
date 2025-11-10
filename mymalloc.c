@@ -129,20 +129,23 @@ void heap_init() {
   *(uint32_t*)(heap + HEAP_SIZE - 4) = HEAP_SIZE - 9;
 }
 
-void heap_dump(const char* fn) {
+int heap_dump(const char* fn) {
   FILE* f = fopen(fn, "wb");
   if (!f) {
     fprintf(stderr, "Failed to open file\n");
-    return;
+    return 1;
   }
   
   size_t bytes = fwrite(heap, sizeof(uint8_t), HEAP_SIZE, f);
-  printf("Wrote [%zu/%d] bytes\n", bytes, HEAP_SIZE);
   if (bytes != HEAP_SIZE) {
     fprintf(stderr, "Incomplete write [%zu/%d]\n", bytes, HEAP_SIZE);
+    fclose(f);
+    return 2;
   }
+  printf("Wrote [%zu/%d] bytes\n", bytes, HEAP_SIZE);
 
   fclose(f);
+  return 0;
 }
 
 #ifdef TEST

@@ -1,4 +1,5 @@
 #include "munit.h"
+#include <stdbool.h>
 #include "test_util.h"
 #define TEST
 #include "../mymalloc.h"
@@ -101,6 +102,8 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
   uint32_t header = *(uint32_t*)(p + 100 + 4);
   munit_assert_int(header, ==, HEAP_SIZE - 9 - 5 - 4 - 100);
 
+  munit_assert_int(heap_check_validity(), ==, 0);
+
   return MUNIT_OK;
 }
 
@@ -142,6 +145,8 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
   uint32_t header = *(uint32_t*)(p2 + 20 + 4);
   munit_assert_int(header, ==, HEAP_SIZE - 9 - 9 - 5 - 4 - 100 - 20);
 
+  munit_assert_int(heap_check_validity(), ==, 0);
+
   return MUNIT_OK;
 }
 
@@ -150,6 +155,7 @@ MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_o
   uint8_t* heap = heap_test_get();
   void* p = mymalloc(HEAP_SIZE);
   munit_assert_null(p);
+  munit_assert_int(heap_check_validity(), ==, 0);
 
   // 2. check the header is appropriate for the HEAP_SIZE
   munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
@@ -159,6 +165,8 @@ MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_o
 
   // 4. check the trailer is equal to the header
   munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+
+  munit_assert_int(heap_check_validity(), ==, 0);
 
   return MUNIT_OK;
 }
@@ -180,17 +188,7 @@ MunitResult test_malloc_free_single(const MunitParameter params[], void* user_da
   heap_init();
   void* p = mymalloc(100);
   myfree(p);
-
-  uint8_t* heap = heap_test_get();
-
-  // 1. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
-
-  // 2. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 3. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  munit_assert_int(heap_check_validity(), ==, 0);
 
   return MUNIT_OK;
 }
@@ -214,17 +212,8 @@ MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_
 
   myfree(p);
   myfree(p2);
+  munit_assert_int(heap_check_validity(), ==, 0);
 
-  uint8_t* heap = heap_test_get();
-
-  // 1. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
-
-  // 2. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 3. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
   return MUNIT_OK;
 }
 
@@ -255,15 +244,8 @@ MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[],
   munit_assert_int(*(uint32_t*)heap, ==, 50);
 
   myfree(p2);
+  munit_assert_int(heap_check_validity(), ==, 0);
 
-  // 1. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
-
-  // 2. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 3. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
   return MUNIT_OK;
 }
 
@@ -281,8 +263,6 @@ MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[],
  */
 MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
-  uint8_t* heap = heap_test_get();
-
   test_util_allocation allocations[50] = {0};
 
   for (int i = 0; i < 50; i++) {
@@ -293,15 +273,7 @@ MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* 
   for (int i = 0; i < 50; i++) {
     myfree(allocations[i].ptr);
   }
-
-  // 1. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
-
-  // 2. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 3. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  munit_assert_int(heap_check_validity(), ==, 0);
   return MUNIT_OK;
 }
 
@@ -319,8 +291,6 @@ MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* 
  */
 MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
-  uint8_t* heap = heap_test_get();
-
   test_util_allocation allocations[50] = {0};
 
   for (int i = 0; i < 50; i++) {
@@ -333,15 +303,7 @@ MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], vo
   for (int i = 0; i < 50; i++) {
     myfree(allocations[i].ptr);
   }
-
-  // 1. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
-
-  // 2. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 3. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  munit_assert_int(heap_check_validity(), ==, 0);
   return MUNIT_OK;
 }
 
@@ -371,6 +333,7 @@ MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* us
   myfree(d);
   d = mymalloc(0x30);
   munit_assert_not_null(d);
-  heap_dump("heap.dump");
+
+  munit_assert_int(heap_check_validity(), ==, 0);
   return MUNIT_OK;
 }

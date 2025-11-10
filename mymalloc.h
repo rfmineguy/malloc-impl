@@ -84,6 +84,19 @@ int   heap_dump(const char* filename);
  *      modifying it, its their fault.
  */
 uint8_t* heap_test_get();
+
+/*
+ * @Desc:
+ *     Determine whether the heap is in a valid state
+ * @Param: none
+ * @Return:
+ *     0 - heap is in a valid state
+ *     1 - a trailer somewhere doesn't match the header
+ * @Notes:
+ *   - being a valid state means that the heap is fully traversable
+ *   - if the heap is fully traversable we can assume the metadata is correct
+ */
+int      heap_check_validity();
 #endif
 
 #endif

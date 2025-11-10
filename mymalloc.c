@@ -148,8 +148,26 @@ int heap_dump(const char* fn) {
   return 0;
 }
 
+#define TEST
 #ifdef TEST
 uint8_t* heap_test_get() {
   return heap;
+}
+
+int heap_check_validity() {
+  int offset = 0;
+
+  while (offset < HEAP_SIZE) {
+    uint32_t stride = ((uint32_t*)(offset + heap))[0];
+    uint8_t  flags  = ((uint8_t* )(offset + heap + 4))[0];
+
+    uint32_t trailer = ((uint32_t*)(offset + heap + 5 + stride))[0];
+    if (trailer != stride) {
+      return 1;
+    }
+    offset += 4 + 1 + stride + 4;
+  }
+  if (offset != HEAP_SIZE) return 2;
+  return 0;
 }
 #endif

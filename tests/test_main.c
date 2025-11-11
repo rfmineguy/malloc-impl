@@ -13,7 +13,8 @@ MunitResult test_malloc_free_multiple(const MunitParameter params[], void* user_
 MunitResult test_malloc_free_multiple_interleaved(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_many_in_order(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], void* user_data_or_fixture);
-MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_multiple_too_big_trigger_resize(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult test_malloc_multiple_too_big_passed_max(const MunitParameter params[], void* user_data_or_fixture);
 
 MunitTest tests[] = {
   { "/heap_init", test_heap_init, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
@@ -25,7 +26,8 @@ MunitTest tests[] = {
   { "/test_malloc_free_multiple_interleaved", test_malloc_free_multiple_interleaved, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_many_in_order", test_malloc_free_many_in_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { "/test_malloc_free_many_out_of_order", test_malloc_free_many_out_of_order, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-  { "/test_malloc_multiple_too_big", test_malloc_multiple_too_big, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_multiple_too_big_trigger_resize", test_malloc_multiple_too_big_trigger_resize, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+  { "/test_malloc_multiple_too_big_passed_max", test_malloc_multiple_too_big_passed_max, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
   { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -155,7 +157,6 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
 
 MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
-  uint8_t* heap = heap_test_get();
   uint32_t size = heap_test_get_current_size();
   void* p = mymalloc(size);
 
@@ -315,7 +316,7 @@ MunitResult test_malloc_free_many_out_of_order(const MunitParameter params[], vo
  *   - the internal heap structure should not change in any way
  *   - the pointer returned from a failed allocation should be NULL
  */
-MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult test_malloc_multiple_too_big_trigger_resize(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void *a = mymalloc(0x400);
   munit_assert_not_null(a);
@@ -334,5 +335,34 @@ MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* us
 
 
   munit_assert_int(heap_check_validity(), ==, 0);
+  return MUNIT_OK;
+}
+
+/* * What are we testing?
+ *   - test what happens when you try to allocate passed the max heap size
+ *   - even though the heap can resize, it also has a max size where it will no longer resize
+ *
+ * Covers:
+ *   - mymalloc()
+ *   - myfree()
+ *
+ * Expected:
+ *   - mymalloc() should return null for any allocations that can't fit even after being resized
+ */
+MunitResult test_malloc_multiple_too_big_passed_max(const MunitParameter params[], void* user_data_or_fixture) {
+  heap_init();
+  int allocation_size = 0x1000;
+  int allocation_count = HEAP_MAX_SIZE / allocation_size;
+  for (int i = 0; i < allocation_count - 1; i++) {
+    munit_assert_int(heap_test_get_current_size(), ==, allocation_size * (i + 1));
+    void* p = mymalloc(allocation_size);
+    munit_assert_not_null(p);
+  }
+  munit_assert_int(heap_check_validity(), ==, 0);
+  munit_assert_int(heap_test_get_current_size(), ==, HEAP_MAX_SIZE);
+
+  void* p = mymalloc(allocation_size);
+  munit_assert_null(p);
+
   return MUNIT_OK;
 }

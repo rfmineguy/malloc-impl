@@ -1,7 +1,9 @@
 #include "munit.h"
 #include <stdbool.h>
 #include "test_util.h"
+#ifndef TEST
 #define TEST
+#endif
 #include "../mymalloc.h"
 
 MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fixture);
@@ -89,7 +91,7 @@ MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fix
  */
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
-  void* p = mymalloc(100);
+  uint8_t* p = mymalloc(100);
   uint32_t size = heap_test_get_current_size();
 
   // check the header of this allocation
@@ -125,7 +127,7 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
  */
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
-  void* p = mymalloc(100);
+  uint8_t* p = mymalloc(100);
   uint32_t size = heap_test_get_current_size();
   // check the header of this allocation
   munit_assert_int(*(uint32_t*)(p - 5), ==, 100);
@@ -135,7 +137,7 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
   munit_assert_int(*(uint32_t*)(p + 100), ==, 100);
 
 
-  void* p2 = mymalloc(20);
+  uint8_t* p2 = mymalloc(20);
   // check the header of this allocation
   munit_assert_int(*(uint32_t*)(p2 - 5), ==, 20);
   munit_assert_int(*(uint8_t*)(p2 - 1), ==, 0x1);

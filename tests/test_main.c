@@ -163,8 +163,6 @@ MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_o
   munit_assert_not_null(p);
   munit_assert_int(heap_check_validity(), ==, 0);
 
-  heap_dump("heap.dump");
-
   return MUNIT_OK;
 }
 

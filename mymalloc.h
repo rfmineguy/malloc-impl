@@ -2,7 +2,8 @@
 #define MYMALLOC_H
 #include <stdint.h>
 
-#define HEAP_SIZE 0x1000
+#define HEAP_MAX_SIZE 0x8000            // the heap is allowed to grow up to this size
+#define HEAP_START_SIZE 0x1000          // the heap starts at this size
 #define FLAG_USED 0x1
 
 /*
@@ -84,6 +85,18 @@ int   heap_dump(const char* filename);
  *      modifying it, its their fault.
  */
 uint8_t* heap_test_get();
+
+/*
+ * @Desc:
+ *     Retrieve the current size of this heap.
+ * @Param: none
+ * @Return:
+ *   - the current size of the heap
+ * @Notes:
+ *   - the current size of the heap is a different concept to the max size of the heap
+ *   - because the heap can grow, this size may change given enough allocations
+ */
+uint32_t heap_test_get_current_size();
 
 /*
  * @Desc:

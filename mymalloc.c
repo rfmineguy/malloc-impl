@@ -2,7 +2,13 @@
 #include <string.h>
 #include <stdio.h>
 
-static uint8_t heap[HEAP_SIZE];
+// For information about how heap resizing works, see:
+//   https://github.com/rfmineguy/malloc-impl/issues/1
+static uint8_t heap[HEAP_MAX_SIZE];
+
+// This is a very sensitive value that should not be exposed outside
+//   of this translation unit
+static uint32_t heap_max_addr = HEAP_START_SIZE;
 
 void* mymalloc(uint32_t size) {
   int offset = 0;
@@ -10,13 +16,13 @@ void* mymalloc(uint32_t size) {
   // while we see regions that are marked as used, go
   // further into the heap
   // skip regions that are too small as well
-  while (offset < HEAP_SIZE) {
+  while (offset < heap_max_addr) {
     uint32_t stride = ((uint32_t*)(offset + heap))[0];
     uint8_t  flags  = ((uint8_t* )(offset + heap + 4))[0];
 
     // Initialize the heap in this case
     if (stride == 0) {
-      stride = HEAP_SIZE - 9;
+      stride = heap_max_addr - 9;
       *(uint32_t*)(heap + offset) = stride;
       *(uint8_t*)(heap + offset + 4) = 0x0;
       *(uint32_t*)(heap + offset + stride + 5) = stride;
@@ -31,7 +37,7 @@ void* mymalloc(uint32_t size) {
 
   // If offset is passed heap we didnt find a region
   // big enough
-  if (offset >= HEAP_SIZE) return NULL;
+  if (offset >= heap_max_addr) return NULL;
 
   // when we finally find an unused region
   // fill in the size, and mark it as used
@@ -45,7 +51,7 @@ void* mymalloc(uint32_t size) {
   uint32_t newoff = offset + 5 + size + 4;
   uint32_t newsize = oldsize > (size + 9) ? oldsize - (size + 9) : 0;
 
-  if (newsize > 0 && newoff + 9 <= HEAP_SIZE) {
+  if (newsize > 0 && newoff + 9 <= heap_max_addr) {
     *(uint32_t*)(heap + newoff) = newsize;
     *(uint32_t*)(heap + newoff + 5 + newsize) = newsize;
     *(uint8_t*)(heap + newoff + 4) = 0;
@@ -64,7 +70,7 @@ void myfree(void *ptr) {
   if (ptr == 0) return;
   uint8_t* p = (uint8_t*)ptr;
   *p = 0xff;
-  if (p < heap || p > heap + HEAP_SIZE)
+  if (p < heap || p > heap + heap_max_addr)
     return;
 
   uint32_t curr_stride = *(uint32_t*)(p - 5);
@@ -123,10 +129,10 @@ right_merge:
 }
 
 void heap_init() {
-  memset(heap, 0, HEAP_SIZE);
-  *(uint32_t*)(heap) = HEAP_SIZE - 9;
+  memset(heap, 0, heap_max_addr);
+  *(uint32_t*)(heap) = heap_max_addr - 9;
   *(uint32_t*)(heap + 4) = 0;
-  *(uint32_t*)(heap + HEAP_SIZE - 4) = HEAP_SIZE - 9;
+  *(uint32_t*)(heap + heap_max_addr - 4) = heap_max_addr - 9;
 }
 
 int heap_dump(const char* fn) {
@@ -136,13 +142,13 @@ int heap_dump(const char* fn) {
     return 1;
   }
   
-  size_t bytes = fwrite(heap, sizeof(uint8_t), HEAP_SIZE, f);
-  if (bytes != HEAP_SIZE) {
-    fprintf(stderr, "Incomplete write [%zu/%d]\n", bytes, HEAP_SIZE);
+  size_t bytes = fwrite(heap, sizeof(uint8_t), heap_max_addr, f);
+  if (bytes != heap_max_addr) {
+    fprintf(stderr, "Incomplete write [%zu/%d]\n", bytes, heap_max_addr);
     fclose(f);
     return 2;
   }
-  printf("Wrote [%zu/%d] bytes\n", bytes, HEAP_SIZE);
+  printf("Wrote [%zu/%d] bytes\n", bytes, heap_max_addr);
 
   fclose(f);
   return 0;
@@ -154,10 +160,14 @@ uint8_t* heap_test_get() {
   return heap;
 }
 
+uint32_t heap_test_get_current_size() {
+  return heap_max_addr;
+}
+
 int heap_check_validity() {
   int offset = 0;
 
-  while (offset < HEAP_SIZE) {
+  while (offset < heap_max_addr) {
     uint32_t stride = ((uint32_t*)(offset + heap))[0];
     uint8_t  flags  = ((uint8_t* )(offset + heap + 4))[0];
 
@@ -167,7 +177,7 @@ int heap_check_validity() {
     }
     offset += 4 + 1 + stride + 4;
   }
-  if (offset != HEAP_SIZE) return 2;
+  if (offset != heap_max_addr) return 2;
   return 0;
 }
 #endif

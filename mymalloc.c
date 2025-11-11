@@ -55,7 +55,7 @@ void* mymalloc(uint32_t size) {
 
   // If offset is passed heap we didnt find a region
   // big enough, so we should trigger a heap resize
-  if (offset >= heap_max_addr && heap_max_addr + HEAP_RESIZE_AMT < HEAP_MAX_SIZE) {
+  if (offset >= heap_max_addr && heap_max_addr + HEAP_RESIZE_AMT <= HEAP_MAX_SIZE) {
     // This is overly simplified due to being in a hosted environment
     //   In reality, we want to 
     //   1. allocate a new frame using the physical memory allocator
@@ -75,6 +75,10 @@ void* mymalloc(uint32_t size) {
     }
     return mymalloc(size);
   }
+
+  // If offset puts us passed the max of the heap, we failed to find a sufficiently
+  // sized region even after resizing the heap
+  if (offset >= HEAP_MAX_SIZE) return NULL;
 
   // when we finally find an unused region
   // fill in the size, and mark it as used
@@ -206,7 +210,7 @@ int heap_check_validity() {
 
   while (offset < heap_max_addr) {
     uint32_t stride = ((uint32_t*)(offset + heap))[0];
-    uint8_t  flags  = ((uint8_t* )(offset + heap + 4))[0];
+    // uint8_t  flags  = ((uint8_t* )(offset + heap + 4))[0];
 
     uint32_t trailer = ((uint32_t*)(offset + heap + 5 + stride))[0];
     if (trailer != stride) {

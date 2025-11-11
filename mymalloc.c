@@ -10,7 +10,20 @@ static uint8_t heap[HEAP_MAX_SIZE];
 //   of this translation unit
 static uint32_t heap_max_addr = HEAP_START_SIZE;
 
-void* mymalloc(uint32_t size) {
+/*
+ * @Internal
+ * @Desc:
+ *     Find the heap offset of the next free region of memory.
+ * @Param:
+ *     size - a size representing the minimum size region to search for
+ * @Return:
+ *     32 bit offset into the heap datastructure where the next free offset is
+ * @Notes:
+ *   - if there are no free blocks in the current heap, it will return a number
+ *      larger than the @heap_max_addr
+ *   - this function is exposed, but not intended to be used directly
+ */
+static uint32_t heap_find_next_free_offset(uint32_t size) {
   int offset = 0;
 
   // while we see regions that are marked as used, go
@@ -34,10 +47,34 @@ void* mymalloc(uint32_t size) {
     }
     break;
   }
+  return offset;
+}
+
+void* mymalloc(uint32_t size) {
+  int offset = heap_find_next_free_offset(size);
 
   // If offset is passed heap we didnt find a region
-  // big enough
-  if (offset >= heap_max_addr) return NULL;
+  // big enough, so we should trigger a heap resize
+  if (offset >= heap_max_addr && heap_max_addr + HEAP_RESIZE_AMT < HEAP_MAX_SIZE) {
+    // This is overly simplified due to being in a hosted environment
+    //   In reality, we want to 
+    //   1. allocate a new frame using the physical memory allocator
+    //   2. page that new frame to be contiguous with the previous frame
+    uint32_t old_max_addr = heap_max_addr;
+    heap_max_addr += HEAP_RESIZE_AMT;
+    uint8_t* last_footer = heap + old_max_addr - 4;
+    uint32_t last_stride = *(uint32_t*)last_footer;
+
+    uint8_t* last_header = last_footer - 5 - last_stride;
+    uint8_t* last_flags = last_header + 4;
+
+    if (!(*last_flags & FLAG_USED)) {
+      uint32_t new_stride = last_stride + HEAP_RESIZE_AMT;
+      *(uint32_t*)last_header = new_stride;
+      *(uint32_t*)(heap + heap_max_addr - 4) = new_stride;
+    }
+    return mymalloc(size);
+  }
 
   // when we finally find an unused region
   // fill in the size, and mark it as used

@@ -4,6 +4,7 @@
 
 #define HEAP_MAX_SIZE 0x8000            // the heap is allowed to grow up to this size
 #define HEAP_START_SIZE 0x1000          // the heap starts at this size
+#define HEAP_RESIZE_AMT 0x1000          // how much memory gets added to the heap when it resizes
 #define FLAG_USED 0x1
 
 /*

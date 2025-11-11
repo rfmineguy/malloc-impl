@@ -158,19 +158,12 @@ MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_o
   uint8_t* heap = heap_test_get();
   uint32_t size = heap_test_get_current_size();
   void* p = mymalloc(size);
-  munit_assert_null(p);
+
+  // This result of this malloc should succeed due to heap resizing
+  munit_assert_not_null(p);
   munit_assert_int(heap_check_validity(), ==, 0);
 
-  // 2. check the header is appropriate for the size
-  munit_assert_int(*(uint32_t*)heap, ==, size - 9);
-
-  // 3. check the flags are not set
-  munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
-
-  // 4. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + size - 4), ==, size - 9);
-
-  munit_assert_int(heap_check_validity(), ==, 0);
+  heap_dump("heap.dump");
 
   return MUNIT_OK;
 }
@@ -333,10 +326,14 @@ MunitResult test_malloc_multiple_too_big(const MunitParameter params[], void* us
   void *c = mymalloc(0x400);
   munit_assert_not_null(c);
   void *d = mymalloc(0x400);
-  munit_assert_null(d);
+
+  // even though the heap starts with 0x1000 memory
+  //   when the last malloc happens it gets resized
+  munit_assert_not_null(d);
   myfree(d);
   d = mymalloc(0x30);
   munit_assert_not_null(d);
+
 
   munit_assert_int(heap_check_validity(), ==, 0);
   return MUNIT_OK;

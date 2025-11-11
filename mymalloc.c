@@ -169,7 +169,7 @@ right_merge:
   }
 }
 
-void heap_init() {
+void heap_init(void) {
   memset(heap, 0, heap_max_addr);
   *(uint32_t*)(heap) = heap_max_addr - 9;
   *(uint32_t*)(heap + 4) = 0;
@@ -195,17 +195,16 @@ int heap_dump(const char* fn) {
   return 0;
 }
 
-#define TEST
 #ifdef TEST
-uint8_t* heap_test_get() {
+uint8_t* heap_test_get(void) {
   return heap;
 }
 
-uint32_t heap_test_get_current_size() {
+uint32_t heap_test_get_current_size(void) {
   return heap_max_addr;
 }
 
-int heap_check_validity() {
+int heap_check_validity(void) {
   int offset = 0;
 
   while (offset < heap_max_addr) {

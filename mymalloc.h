@@ -57,7 +57,7 @@ void  myfree(void* ptr);
  * @Notes:
  *   - for information on validity, see #heap_check_validity
  */
-void  heap_init();
+void  heap_init(void);
 
 /*
  * @Desc:
@@ -85,7 +85,7 @@ int   heap_dump(const char* filename);
  *      of this function to do what they want with it. if they break the heap by
  *      modifying it, its their fault.
  */
-uint8_t* heap_test_get();
+uint8_t* heap_test_get(void);
 
 /*
  * @Desc:
@@ -97,7 +97,7 @@ uint8_t* heap_test_get();
  *   - the current size of the heap is a different concept to the max size of the heap
  *   - because the heap can grow, this size may change given enough allocations
  */
-uint32_t heap_test_get_current_size();
+uint32_t heap_test_get_current_size(void);
 
 /*
  * @Desc:
@@ -110,7 +110,7 @@ uint32_t heap_test_get_current_size();
  *   - being a valid state means that the heap is fully traversable
  *   - if the heap is fully traversable we can assume the metadata is correct
  */
-int      heap_check_validity();
+int      heap_check_validity(void);
 #endif
 
 #endif

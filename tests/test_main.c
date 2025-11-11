@@ -52,22 +52,23 @@ int main(int argc, char** argv) {
 MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   uint8_t* heap = heap_test_get();
+  uint32_t size = heap_test_get_current_size();
 
   // 1. ensure the entire heap is zeroed other than the:
   //       header
   //       trailer
   //       flags
-  for (int i = 5; i < HEAP_SIZE - 5; i++)
+  for (int i = 5; i < size - 5; i++)
     munit_assert_int(heap[i], ==, 0);
 
   // 2. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+  munit_assert_int(*(uint32_t*)heap, ==, size - 9);
 
   // 3. check the flags are not set
   munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
 
   // 4. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  munit_assert_int(*(uint32_t*)(heap + size - 4), ==, size - 9);
   return MUNIT_OK;
 }
 
@@ -87,6 +88,7 @@ MunitResult test_heap_init(const MunitParameter params[], void* user_data_or_fix
 MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);
+  uint32_t size = heap_test_get_current_size();
 
   // check the header of this allocation
   munit_assert_int(*(uint32_t*)(p - 5), ==, 100);
@@ -96,11 +98,11 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
   munit_assert_int(*(uint32_t*)(p + 100), ==, 100);
 
   // check the header of the region after
-  munit_assert_int(*(uint32_t*)(p + 100 + 4), ==, HEAP_SIZE - 9 - 5 - 4 - 100);
+  munit_assert_int(*(uint32_t*)(p + 100 + 4), ==, size - 9 - 5 - 4 - 100);
 
   // check the trailer of the region after
   uint32_t header = *(uint32_t*)(p + 100 + 4);
-  munit_assert_int(header, ==, HEAP_SIZE - 9 - 5 - 4 - 100);
+  munit_assert_int(header, ==, size - 9 - 5 - 4 - 100);
 
   munit_assert_int(heap_check_validity(), ==, 0);
 
@@ -122,6 +124,7 @@ MunitResult test_malloc_single(const MunitParameter params[], void* user_data_or
 MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   void* p = mymalloc(100);
+  uint32_t size = heap_test_get_current_size();
   // check the header of this allocation
   munit_assert_int(*(uint32_t*)(p - 5), ==, 100);
   munit_assert_int(*(uint8_t*)(p - 1), ==, 0x1);
@@ -139,11 +142,11 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
   munit_assert_int(*(uint32_t*)(p2 + 20), ==, 20);
 
   // check the header of the region after
-  munit_assert_int(*(uint32_t*)(p2 + 20 + 4), ==, HEAP_SIZE - 9 - 9 - 5 - 4 - 100 - 20);
+  munit_assert_int(*(uint32_t*)(p2 + 20 + 4), ==, size - 9 - 9 - 5 - 4 - 100 - 20);
 
   // check the trailer of the region after
   uint32_t header = *(uint32_t*)(p2 + 20 + 4);
-  munit_assert_int(header, ==, HEAP_SIZE - 9 - 9 - 5 - 4 - 100 - 20);
+  munit_assert_int(header, ==, size - 9 - 9 - 5 - 4 - 100 - 20);
 
   munit_assert_int(heap_check_validity(), ==, 0);
 
@@ -153,18 +156,19 @@ MunitResult test_malloc_multiple(const MunitParameter params[], void* user_data_
 MunitResult test_malloc_too_big(const MunitParameter params[], void* user_data_or_fixture) {
   heap_init();
   uint8_t* heap = heap_test_get();
-  void* p = mymalloc(HEAP_SIZE);
+  uint32_t size = heap_test_get_current_size();
+  void* p = mymalloc(size);
   munit_assert_null(p);
   munit_assert_int(heap_check_validity(), ==, 0);
 
-  // 2. check the header is appropriate for the HEAP_SIZE
-  munit_assert_int(*(uint32_t*)heap, ==, HEAP_SIZE - 9);
+  // 2. check the header is appropriate for the size
+  munit_assert_int(*(uint32_t*)heap, ==, size - 9);
 
   // 3. check the flags are not set
   munit_assert_int(*(uint8_t*)(heap + 4), ==, 0x0);
 
   // 4. check the trailer is equal to the header
-  munit_assert_int(*(uint32_t*)(heap + HEAP_SIZE - 4), ==, HEAP_SIZE - 9);
+  munit_assert_int(*(uint32_t*)(heap + size - 4), ==, size - 9);
 
   munit_assert_int(heap_check_validity(), ==, 0);
 

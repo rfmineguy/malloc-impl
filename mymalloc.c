@@ -170,6 +170,7 @@ right_merge:
 }
 
 void heap_init(void) {
+  heap_max_addr = HEAP_START_SIZE;
   memset(heap, 0, heap_max_addr);
   *(uint32_t*)(heap) = heap_max_addr - 9;
   *(uint32_t*)(heap + 4) = 0;
